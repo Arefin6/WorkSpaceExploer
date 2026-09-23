@@ -58,7 +58,7 @@ pnpm run dev
 Open http://localhost:3000 in your browser to view the application.
 
 ## Project Structure
-
+```bash
 ├── app/
 │ ├── layout.tsx # Root application layout
 │ ├── page.tsx # Main workspace entry point & modal coordinator
@@ -80,7 +80,7 @@ Open http://localhost:3000 in your browser to view the application.
 │ └── explorer.ts # TypeScript interface definitions
 └── data/
 └── initialData.ts # Default initial mock workspace seed data
-
+```
 Data Structure & Architecture
 
 Rather than using a deeply nested tree object ({ id, name, children: [...] }), the filesystem is stored using a normalized flat dictionary (hash map) keyed by item IDs:
@@ -101,8 +101,12 @@ export type ExplorerMap = Record<string, ExplorerItem>;
 ```
 
 Why a Normalized Map?
-O(1) Constant Time Lookups: Accessing or updating any item by ID takes constant time, avoiding expensive recursive tree traversals.
+
+O(1) Constant Time Lookups:
+Accessing or updating any item by ID takes constant time, avoiding expensive recursive tree traversals.
+
 Simplified Immutability: Updating an item's content or name requires modifying a single object key without deep cloning ancestor trees.
+
 Easy Parent & Child Queries:
 Children of a folder: Object.values(items).filter(i => i.parentId === folderId)
 
@@ -111,8 +115,12 @@ Breadcrumb chain: Traversing upwards using item.parentId until null.
 State Management Approach:
 
 The application uses custom React hooks (useExplorer and useLocalStorage) to encapsulate logic and separate UI rendering from business operations:
+
 useExplorer: Manages current folder navigation (selectedFolderId), active open text file (activeFileId), sidebar expanded paths, search queries, and action handlers.
-useLocalStorage: Handles persistent syncing to localStorage.Pure Utility Layer (explorerUtils.ts): Core algorithms (cascading recursive deletes, search filtering, duplicate name validation) are extracted as pure functions to facilitate unit testing and isolate logic.
+
+useLocalStorage: Handles persistent syncing to localStorage.Pure Utility Layer 
+
+(explorerUtils.ts): Core algorithms (cascading recursive deletes, search filtering, duplicate name validation) are extracted as pure functions to facilitate unit testing and isolate logic.
 
 Important Implementation Decisions
 
