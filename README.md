@@ -3,6 +3,8 @@
 A responsive, browser-based file manager built with **Next.js (App Router)**, **TypeScript**, and **Tailwind CSS**. It allows users to create, navigate, search, edit, rename, and delete nested folders and text files with persistent local storage.
 
 ---
+Live Link: 
+https://work-space-exploer.vercel.app/
 
 ## Table of Contents
 
