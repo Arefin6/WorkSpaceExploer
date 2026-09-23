@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
-import { ExplorerMap } from "@/types/explorer";
+import React from "react";
+import { ExplorerItem, ExplorerMap } from "@/types/explorer";
 import {
   getBreadcrumbs,
   getChildren,
   searchWorkspace,
 } from "@/libs/explorerUtils";
 import { Breadcrumbs } from "./BreadCrumbs";
+import { FolderView } from "./FolderView";
+import { TextEditor } from "./TextEditor";
 import { Search, FolderPlus, FilePlus, X } from "lucide-react";
 
 interface MainPanelProps {
@@ -18,7 +20,12 @@ interface MainPanelProps {
   setSearchQuery: (q: string) => void;
   onNavigate: (id: string | null) => void;
   onOpenFile: (id: string) => void;
+  onCloseFile: () => void;
   onCreateAction: (type: "folder" | "file") => void;
+  onRenameAction: (item: ExplorerItem) => void;
+  onDeleteAction: (id: string) => void;
+  onSaveFileContent: (fileId: string, content: string) => void;
+  setHasUnsavedChanges: (hasChanges: boolean) => void;
 }
 
 export const MainPanel: React.FC<MainPanelProps> = ({
@@ -29,13 +36,20 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   setSearchQuery,
   onNavigate,
   onOpenFile,
+  onCloseFile,
   onCreateAction,
+  onRenameAction,
+  onDeleteAction,
+  onSaveFileContent,
+  setHasUnsavedChanges,
 }) => {
-  // Compute breadcrumbs for the current folder navigation
   const breadcrumbSegments = getBreadcrumbs(items, selectedFolderId);
+  const currentFolderChildren = getChildren(items, selectedFolderId);
+  const searchResults = searchQuery ? searchWorkspace(items, searchQuery) : [];
+  const activeFile = activeFileId ? items[activeFileId] : null;
 
   return (
-    <main className="flex-1 flex flex-col bg-white dark:bg-[#0a0a0a] min-w-0">
+    <main className="flex-1 flex flex-col bg-white dark:bg-[#0a0a0a] min-w-0 h-full overflow-hidden">
       {/* TOP TOOLBAR */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 gap-4">
         <div className="flex-1 min-w-0">
@@ -57,6 +71,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery("")}
                 className="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-gray-600"
               >
@@ -65,10 +80,11 @@ export const MainPanel: React.FC<MainPanelProps> = ({
             )}
           </div>
 
-          {/* Action Buttons (Hidden when searching or viewing a file) */}
+          {/* Action Buttons */}
           {!searchQuery && !activeFileId && (
             <div className="flex items-center gap-1.5 border-l border-gray-200 dark:border-gray-800 pl-3">
               <button
+                type="button"
                 onClick={() => onCreateAction("folder")}
                 className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 rounded-md transition-colors"
                 title="New Folder"
@@ -76,6 +92,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
                 <FolderPlus className="w-5 h-5" />
               </button>
               <button
+                type="button"
                 onClick={() => onCreateAction("file")}
                 className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 rounded-md transition-colors"
                 title="New File"
@@ -89,18 +106,42 @@ export const MainPanel: React.FC<MainPanelProps> = ({
 
       {/* CONTENT AREA */}
       <div className="flex-1 overflow-y-auto p-4">
-        {activeFileId ? (
-          <div className="h-full border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-400">
-            [TextEditor component will go here]
-          </div>
+        {activeFile ? (
+          <TextEditor
+            file={activeFile}
+            onSave={(content) => onSaveFileContent(activeFile.id, content)}
+            onClose={onCloseFile}
+            setHasUnsavedChanges={setHasUnsavedChanges}
+          />
         ) : searchQuery ? (
-          <div className="h-full border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-400">
-            [Search Results grid will go here]
+          <div>
+            <h2 className="text-sm font-semibold text-gray-500 mb-3">
+              Search Results for &quot;{searchQuery}&quot; (
+              {searchResults.length})
+            </h2>
+            <FolderView
+              items={searchResults}
+              onOpenFolder={(id) => {
+                setSearchQuery("");
+                onNavigate(id);
+              }}
+              onOpenFile={(id) => {
+                setSearchQuery("");
+                onOpenFile(id);
+              }}
+              onRename={onRenameAction}
+              onDelete={onDeleteAction}
+              emptyMessage={`No files or folders found matching "${searchQuery}"`}
+            />
           </div>
         ) : (
-          <div className="h-full border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-400">
-            [Folder Contents grid will go here]
-          </div>
+          <FolderView
+            items={currentFolderChildren}
+            onOpenFolder={onNavigate}
+            onOpenFile={onOpenFile}
+            onRename={onRenameAction}
+            onDelete={onDeleteAction}
+          />
         )}
       </div>
     </main>
