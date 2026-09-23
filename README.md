@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mini Workspace Explorer
 
-## Getting Started
+A responsive, browser-based file manager built with **Next.js (App Router)**, **TypeScript**, and **Tailwind CSS**. It allows users to create, navigate, search, edit, rename, and delete nested folders and text files with persistent local storage.
 
-First, run the development server:
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [How to Run the Project](#how-to-run-the-project)
+- [Project Structure](#project-structure)
+- [Data Structure & Architecture](#data-structure--architecture)
+- [State Management Approach](#state-management-approach)
+- [Important Implementation Decisions](#important-implementation-decisions)
+
+---
+
+## Features
+
+- **Hierarchical File Tree**: Collapsible, infinitely nested sidebar navigation.
+- **Main Explorer Panel**: Interactive grid view with clickable breadcrumb navigation.
+- **CRUD Operations**: Create, rename, and recursively delete folders and files.
+- **Text File Editor**: Edit and save text file contents with unsaved changes detection.
+- **Workspace-Wide Search**: Instantly filter files and folders across all directory levels.
+- **Persistence**: Safe client-side storage persistence using `localStorage`.
+
+---
+
+## How to Run the Project
+
+### Prerequisites
+
+Ensure you have **Node.js 18.x** or higher and `npm`, `yarn`, or `pnpm` installed.
+
+### 1. Installation
+
+Clone the repository and install dependencies:
 
 ```bash
-npm run dev
+# Install dependencies
+npm install
 # or
-yarn dev
+yarn install
 # or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Development Server
+   Run the local development server:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# or
+npm run dev
+# or
+pnpm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open http://localhost:3000 in your browser to view the application.
 
-## Learn More
+Project Structure
+.
+├── app/
+│ ├── layout.tsx # Root application layout
+│ ├── page.tsx # Main workspace entry point & modal coordinator
+│ └── globals.css # Global Tailwind CSS styles
+├── components/
+│ ├── Sidebar.tsx # Container for the file explorer tree
+│ ├── TreeNode.tsx # Recursive tree item component for sidebar
+│ ├── MainPanel.tsx # Main layout for grid view, search, and editor
+│ ├── FolderView.tsx # Grid representation of folder contents
+│ ├── Breadcrumbs.tsx # Clickable path traversal navigation
+│ ├── TextEditor.tsx # Plain text viewer/editor component
+│ └── ActionModal.tsx # Create and rename validation modal
+├── hooks/
+│ ├── useExplorer.ts # Core workspace state & operation logic
+│ └── useLocalStorage.ts # Hydration-safe local storage hook
+├── libs/
+│ └── explorerUtils.ts # Pure helper functions (CRUD, search, breadcrumbs)
+├── types/
+│ └── explorer.ts # TypeScript interface definitions
+└── data/
+└── initialData.ts # Default initial mock workspace seed data
 
-To learn more about Next.js, take a look at the following resources:
+Data Structure & Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Rather than using a deeply nested tree object ({ id, name, children: [...] }), the filesystem is stored using a normalized flat dictionary (hash map) keyed by item IDs:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+   export type ItemType = 'folder' | 'file';
 
-## Deploy on Vercel
+export interface ExplorerItem {
+  id: string;
+  name: string;
+  type: ItemType;
+  parentId: string | null; // null represents Root Workspace level
+  content?: string;        // Text content (files only)
+  createdAt: number;
+}
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+export type ExplorerMap = Record<string, ExplorerItem>;
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Why a Normalized Map?$O(1)$ Constant Time Lookups: Accessing or updating any item by ID takes constant time, avoiding expensive recursive tree traversals.Simplified Immutability: Updating an item's content or name requires modifying a single object key without deep cloning ancestor trees.
+Easy Parent & Child Queries:
+
+Children of a folder: Object.values(items).filter(i => i.parentId === folderId)
+
+Breadcrumb chain: Traversing upwards using item.parentId until null.
+
+State Management Approach
+The application uses custom React hooks (useExplorer and useLocalStorage) to encapsulate logic and separate UI rendering from business operations:useExplorer: Manages current folder navigation (selectedFolderId), active open text file (activeFileId), sidebar expanded paths, search queries, and action handlers.useLocalStorage: Handles persistent syncing to localStorage.Pure Utility Layer (explorerUtils.ts): Core algorithms (cascading recursive deletes, search filtering, duplicate name validation) are extracted as pure functions to facilitate unit testing and isolate logic.Important Implementation Decisions1. Cascading Deletion & Smart Navigation FallbackDeleting a folder recursively collects all descendant IDs using a Set ($O(N)$ execution) to purge nested files and subfolders simultaneously.If a user deletes the folder they are currently viewing, useExplorer automatically re-navigates them up to the deleted folder's parent (parentId).2. Validation & Edge CasesDuplicate Prevention: Name creation/renaming enforces case-insensitive uniqueness within the target parent directory.Character Filtering: Prevents reserved OS file path characters (\ / : \* ? " < > |).Unsaved Changes: The text editor tracks dirty state (content !== originalContent) and prompts for user confirmation before closing unsaved work.3. Server-Side Rendering (SSR) ProtectionDirect access to window.localStorage is deferred until useEffect mounts on the client to prevent Next.js SSR hydration mismatches.
