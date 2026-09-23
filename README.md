@@ -58,7 +58,6 @@ pnpm run dev
 Open http://localhost:3000 in your browser to view the application.
 
 Project Structure
-.
 ├── app/
 │ ├── layout.tsx # Root application layout
 │ ├── page.tsx # Main workspace entry point & modal coordinator
