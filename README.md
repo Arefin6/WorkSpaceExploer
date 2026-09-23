@@ -57,7 +57,8 @@ pnpm run dev
 
 Open http://localhost:3000 in your browser to view the application.
 
-Project Structure
+## Project Structure
+
 ├── app/
 │ ├── layout.tsx # Root application layout
 │ ├── page.tsx # Main workspace entry point & modal coordinator
@@ -99,12 +100,26 @@ export interface ExplorerItem {
 export type ExplorerMap = Record<string, ExplorerItem>;
 ```
 
-Why a Normalized Map?$O(1)$ Constant Time Lookups: Accessing or updating any item by ID takes constant time, avoiding expensive recursive tree traversals.Simplified Immutability: Updating an item's content or name requires modifying a single object key without deep cloning ancestor trees.
+Why a Normalized Map?
+O(1) Constant Time Lookups: Accessing or updating any item by ID takes constant time, avoiding expensive recursive tree traversals.
+Simplified Immutability: Updating an item's content or name requires modifying a single object key without deep cloning ancestor trees.
 Easy Parent & Child Queries:
-
 Children of a folder: Object.values(items).filter(i => i.parentId === folderId)
 
 Breadcrumb chain: Traversing upwards using item.parentId until null.
 
-State Management Approach
-The application uses custom React hooks (useExplorer and useLocalStorage) to encapsulate logic and separate UI rendering from business operations:useExplorer: Manages current folder navigation (selectedFolderId), active open text file (activeFileId), sidebar expanded paths, search queries, and action handlers.useLocalStorage: Handles persistent syncing to localStorage.Pure Utility Layer (explorerUtils.ts): Core algorithms (cascading recursive deletes, search filtering, duplicate name validation) are extracted as pure functions to facilitate unit testing and isolate logic.Important Implementation Decisions1. Cascading Deletion & Smart Navigation FallbackDeleting a folder recursively collects all descendant IDs using a Set ($O(N)$ execution) to purge nested files and subfolders simultaneously.If a user deletes the folder they are currently viewing, useExplorer automatically re-navigates them up to the deleted folder's parent (parentId).2. Validation & Edge CasesDuplicate Prevention: Name creation/renaming enforces case-insensitive uniqueness within the target parent directory.Character Filtering: Prevents reserved OS file path characters (\ / : \* ? " < > |).Unsaved Changes: The text editor tracks dirty state (content !== originalContent) and prompts for user confirmation before closing unsaved work.3. Server-Side Rendering (SSR) ProtectionDirect access to window.localStorage is deferred until useEffect mounts on the client to prevent Next.js SSR hydration mismatches.
+State Management Approach:
+
+The application uses custom React hooks (useExplorer and useLocalStorage) to encapsulate logic and separate UI rendering from business operations:
+useExplorer: Manages current folder navigation (selectedFolderId), active open text file (activeFileId), sidebar expanded paths, search queries, and action handlers.
+useLocalStorage: Handles persistent syncing to localStorage.Pure Utility Layer (explorerUtils.ts): Core algorithms (cascading recursive deletes, search filtering, duplicate name validation) are extracted as pure functions to facilitate unit testing and isolate logic.
+
+Important Implementation Decisions
+
+1. Cascading Deletion & Smart Navigation Fallback
+   Deleting a folder recursively collects all descendant IDs using a Set (O(N) execution) to purge nested files and subfolders simultaneously.
+   If a user deletes the folder they are currently viewing, useExplorer automatically re-navigates them up to the deleted folder's parent (parentId).
+2. Validation & Edge CasesDuplicate Prevention: Name creation/renaming enforces case-insensitive uniqueness within the target parent directory.
+   Character Filtering: Prevents reserved OS file path characters (\ / : \* ? " < > |).
+   Unsaved Changes: The text editor tracks dirty state (content !== originalContent) and prompts for user confirmation before closing unsaved work.
+3. Server-Side Rendering (SSR) ProtectionDirect access to window.localStorage is deferred until useEffect mounts on the client to prevent Next.js SSR hydration mismatches.
