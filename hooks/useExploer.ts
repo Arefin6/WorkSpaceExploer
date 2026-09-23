@@ -7,24 +7,20 @@ import { useLocalStorage } from "./useLocalStorage";
 import { deleteItemRecursive, validateName } from "@/libs/explorerUtils";
 
 export function useExplorer() {
-  // 1. Persisted Workspace State
   const [items, setItems] = useLocalStorage<ExplorerMap>(
     "mini_workspace_items",
     INITIAL_FILES,
   );
 
-  // 2. Navigation State
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null); // null = Root Workspace
   const [activeFileId, setActiveFileId] = useState<string | null>(null); // Currently opened text file
   const [expandedFolders, setExpandedFolders] = useState<
     Record<string, boolean>
-  >({}); // Sidebar tree collapse state
+  >({});
 
   // 3. Search & Editor Unsaved Changes State
   const [searchQuery, setSearchQuery] = useState("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-  // --- ACTIONS ---
 
   // Toggle tree node expand/collapse
   const toggleFolderExpand = (folderId: string) => {
@@ -38,7 +34,6 @@ export function useExplorer() {
   const navigateToFolder = (folderId: string | null) => {
     setSelectedFolderId(folderId);
     if (folderId) {
-      // Auto-expand parent folders up to root
       setExpandedFolders((prev) => {
         const updated = { ...prev, [folderId]: true };
         let current = items[folderId];
@@ -72,13 +67,12 @@ export function useExplorer() {
     if (type === "file") {
       setActiveFileId(newId);
     } else {
-      // Expand current parent so user sees newly created folder
       if (selectedFolderId) {
         setExpandedFolders((prev) => ({ ...prev, [selectedFolderId]: true }));
       }
     }
 
-    return null; // Success
+    return null;
   };
 
   // Rename File or Folder
@@ -97,7 +91,6 @@ export function useExplorer() {
     return null; // Success
   };
 
-  // Delete File or Folder (Handling selected folder fallback & active file closing)
   const deleteItem = (id: string) => {
     const itemToDelete = items[id];
     if (!itemToDelete) return;
