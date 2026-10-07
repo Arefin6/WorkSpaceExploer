@@ -1,9 +1,5 @@
 import { ExplorerItem, ExplorerMap } from "@/types/explorer";
 
-/**
- * 1. Get immediate children of a given folder.
- * Folders appear first, followed by files, both sorted alphabetically.
- */
 export function getChildren(
   items: ExplorerMap,
   parentId: string | null,
@@ -20,10 +16,7 @@ export function getChildren(
     });
 }
 
-/**
- * 2. Get the breadcrumb path array from root to current folder.
- * Example return: [{ id: null, name: 'Workspace' }, { id: 'f-1', name: 'Projects' }]
- */
+
 export interface BreadcrumbSegment {
   id: string | null;
   name: string;
@@ -48,9 +41,7 @@ export function getBreadcrumbs(
   return crumbs;
 }
 
-/**
- * 3. Validate item name against empty string and duplicate names in the same folder.
- */
+
 export function validateName(
   items: ExplorerMap,
   parentId: string | null,
@@ -83,9 +74,7 @@ export function validateName(
   return null; // Valid
 }
 
-/**
- * 4. Recursively collect all descendant IDs of a folder (for cascading deletes).
- */
+
 export function getAllDescendantIds(
   items: ExplorerMap,
   folderId: string,
@@ -106,9 +95,7 @@ export function getAllDescendantIds(
   return idsToDelete;
 }
 
-/**
- * Deletes an item and all its nested children from the map immutably.
- */
+
 export function deleteItemRecursive(
   items: ExplorerMap,
   idToDelete: string,
@@ -125,9 +112,7 @@ export function deleteItemRecursive(
   return newMap;
 }
 
-/**
- * 5. Search workspace for files/folders matching a search string.
- */
+
 export function searchWorkspace(
   items: ExplorerMap,
   query: string,
