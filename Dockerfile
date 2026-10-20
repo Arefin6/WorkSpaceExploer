@@ -1,9 +1,9 @@
 # // Base Image
-FROM node:18-alpine
+FROM node:20.9-alpine
 WORKDIR /app
 COPY package*.json .
 RUN npm install
 COPY . .
 ENV PORT=3000
 EXPOSE 3000
-CMD ["npm", "dev"]
+CMD ["npm", "run", "dev"]
